@@ -1,0 +1,71 @@
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #192033; background: #f5f6f9; font-synthesis: none;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 700px; }
+button, input, select { font: inherit; }
+.page { width: min(920px, calc(100% - 40px)); margin: 0 auto; padding: 28px 0 76px; }
+.hero { display: flex; align-items: center; gap: 13px; margin-bottom: 20px; }
+.brand-mark { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px; color: white; font-size: 16px; font-weight: 850; background: linear-gradient(135deg, #4f46e5, #2563eb); box-shadow: 0 9px 22px rgba(79,70,229,.2); }
+h1 { margin: 0; font-size: 24px; letter-spacing: -.7px; }
+.hero p, .section-heading p { margin: 5px 0 0; color: #7c8498; }
+.card { margin: 12px 0; padding: 20px; border: 1px solid #e1e4ee; border-radius: 14px; background: white; box-shadow: 0 8px 25px rgba(31, 38, 68, .05); }
+h2 { margin: 0 0 15px; font-size: 16px; }
+.section-heading { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+.section-heading h2 { margin-bottom: 0; }
+.section-heading p { font-size: 13px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 13px; }
+label { display: grid; gap: 7px; color: #565f75; font-size: 13px; font-weight: 650; }
+input, select { width: 100%; height: 38px; padding: 0 12px; color: #20273a; border: 1px solid #dce0e9; border-radius: 8px; background: #fafbfe; outline: none; }
+input:focus, select:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99, 102, 241, .12); }
+.switches { display: grid; gap: 12px; margin-top: 16px; }
+.switch { display: flex; align-items: center; gap: 10px; }
+.switch input, .enabled input { width: 17px; height: 17px; accent-color: #5b5bd6; }
+.provider-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 11px; }
+.provider-card { display: flex; flex-direction: column; gap: 7px; padding: 15px; border: 1px solid #e3e6ee; border-radius: 13px; background: #fafbff; }
+.provider-card span { color: #0b8b60; font-size: 12px; }
+button { height: 36px; padding: 0 14px; border: 0; border-radius: 8px; cursor: pointer; font-weight: 720; }
+.primary { min-width: 112px; color: white; background: linear-gradient(135deg, #4f46e5, #2563eb); }
+.secondary { color: #4f46e5; background: #eeefff; }
+.danger { height: 31px; padding: 0 11px; color: #b42318; background: #fff0ef; font-size: 12px; }
+.custom-list { display: grid; gap: 11px; }
+.custom-provider { padding: 15px; border: 1px solid #dfe3ec; border-radius: 14px; background: #fbfcff; }
+.custom-header { display: flex; justify-content: space-between; margin-bottom: 15px; }
+.enabled { display: flex; align-items: center; gap: 8px; }
+.custom-fields .wide { grid-column: 1 / -1; }
+.test-row { display: flex; align-items: center; gap: 12px; margin-top: 14px; color: #697187; font-size: 12px; }
+.test-row .ok { color: #067647; }
+.test-row .error { color: #b42318; }
+.empty { padding: 24px; color: #9299aa; text-align: center; border: 1px dashed #d7dbe5; border-radius: 13px; }
+.protocol { display: grid; gap: 8px; margin-top: 18px; padding: 14px; border-radius: 11px; color: #5f6678; background: #f5f6f9; font-size: 12px; }
+.protocol code { overflow-wrap: anywhere; color: #4f46e5; }
+.save-bar { position: fixed; right: 0; bottom: 0; left: 0; display: flex; justify-content: flex-end; align-items: center; gap: 20px; padding: 11px max(20px, calc((100vw - 920px) / 2)); border-top: 1px solid #dfe2eb; background: rgba(255,255,255,.92); backdrop-filter: blur(14px); }
+#message { color: #657087; font-size: 13px; }
+#message.ok { color: #067647; }
+#message.error { color: #b42318; }
+@media (prefers-color-scheme: dark) {
+  :root { color: #eceef5; background: #161822; }
+  .card { border-color: #323646; background: #20232f; }
+  input, select { color: #edf0f7; border-color: #393e50; background: #272b39; }
+  .provider-card, .custom-provider { border-color: #353a4b; background: #272a37; }
+  .protocol { background: #2a2e3b; }
+  .save-bar { border-color: #333746; background: rgba(28,30,40,.92); }
+}
+.feature-settings { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; }
+.feature-setting { display:flex; align-items:flex-start; gap:11px; padding:13px; border:1px solid #e2e5ed; border-radius:10px; background:#fafbff; cursor:pointer; }
+.feature-setting input { flex:0 0 auto; width:18px; height:18px; margin-top:2px; accent-color:#4f46e5; }
+.feature-setting span { display:grid; gap:4px; }.feature-setting strong { color:#3f4558; }.feature-setting small { color:#9298a8; font-weight:500; line-height:1.45; }
+@media (prefers-color-scheme: dark) { .feature-setting { border-color:#353a4b; background:#272a37; }.feature-setting strong { color:#e6e8f0; } }
+.openai-settings { display:none; margin-top:14px; padding-top:14px; border-top:1px solid #e6e8ef; }
+.openai-settings.visible { display:block; }
+.prompt-settings { margin-top:13px; border:1px solid #e1e4ee; border-radius:10px; background:#fafbff; }
+.prompt-settings summary { padding:11px 13px; color:#424b60; cursor:pointer; font-size:12px; font-weight:750; }
+.prompt-settings summary small { margin-left:7px; color:#9299aa; font-weight:500; }
+.prompt-grid { display:grid; gap:12px; padding:0 13px 13px; }
+.prompt-grid textarea { width:100%; min-height:82px; padding:10px 11px; resize:vertical; color:#283044; border:1px solid #dce0e9; border-radius:8px; background:#fff; font:12px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace; outline:none; }
+.prompt-grid textarea:focus { border-color:#818cf8; box-shadow:0 0 0 3px rgba(99,102,241,.10); }
+.prompt-help { margin:0 13px 11px; padding:10px; color:#687187; border-radius:8px; background:#f0f2f8; font-size:11px; line-height:1.6; }
+.prompt-help code { color:#4338ca; }
+.prompt-reset { margin:0 13px 13px; }
+@media (prefers-color-scheme: dark) { .openai-settings { border-color:#363a49; }.prompt-settings { border-color:#393e50; background:#272a37; }.prompt-settings summary { color:#e0e3ec; }.prompt-grid textarea { color:#eef0f6; border-color:#3b4051; background:#222530; }.prompt-help { color:#abb1c0; background:#303440; } }

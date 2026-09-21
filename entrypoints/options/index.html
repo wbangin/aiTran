@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="wxt.open_in_tab" content="true" />
+    <title>aiTran 设置</title>
+  </head>
+  <body>
+    <main class="page">
+      <header class="hero">
+        <div class="brand-mark">AI</div>
+        <div>
+          <h1>aiTran 设置</h1>
+          <p>免费、无会员、隐私优先的双语网页翻译</p>
+        </div>
+      </header>
+
+      <section class="card">
+        <h2>翻译偏好</h2>
+        <div class="form-grid">
+          <label>默认翻译服务<select id="default-provider"></select></label>
+          <label>源语言<select id="source-language"></select></label>
+          <label>目标语言<select id="target-language"></select></label>
+          <label>显示模式
+            <select id="display-mode">
+              <option value="bilingual">双语对照</option>
+              <option value="translation-only">仅显示译文</option>
+            </select>
+          </label>
+        </div>
+        <div class="switches">
+          <label class="switch"><input type="checkbox" id="auto-translate" /><span>打开网页后自动翻译</span></label>
+          <label class="switch"><input type="checkbox" id="auto-fallback" /><span>免费服务失败时自动切换备用服务</span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div><h2>页面增强</h2><p>按需要启用划词、悬停、输入框和浮动控制</p></div>
+        </div>
+        <div class="feature-settings">
+          <label class="feature-setting"><input type="checkbox" id="selection-translation" /><span><strong>划词翻译</strong><small>跟随当前网页翻译服务：Google、Microsoft 或自定义 API</small></span></label>
+          <label class="feature-setting"><input type="checkbox" id="hover-translation" /><span><strong>鼠标悬停翻译</strong><small id="hover-shortcut-help">按住 Alt 并悬停 650ms 后翻译段落</small></span></label>
+          <label class="feature-setting"><input type="checkbox" id="input-translation" /><span><strong>输入框翻译</strong><small id="input-shortcut-help">聚焦输入框后按 Alt+I</small></span></label>
+          <label class="feature-setting"><input type="checkbox" id="floating-ball" /><span><strong>页面悬浮按钮</strong><small>在网页右侧显示“译/原”快捷按钮</small></span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div><h2>免费服务</h2><p>无需账号或 API Key</p></div>
+        </div>
+        <div class="provider-grid">
+          <article class="provider-card"><strong>Microsoft Translate</strong><span>免费 · 免配置</span></article>
+          <article class="provider-card"><strong>Google Translate</strong><span>免费 · 免配置</span></article>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="section-heading">
+          <div><h2>自定义服务</h2><p>使用自己的 URL 和 API Key，可添加多个服务</p></div>
+          <button id="add-provider" class="secondary">添加服务</button>
+        </div>
+        <div id="custom-providers" class="custom-list"></div>
+        <div class="protocol">
+          <strong>接口协议</strong>
+          <code>支持 aiTran JSON 批量协议，以及 OpenAI / OpenRouter / Ollama 等 Chat Completions 兼容接口</code>
+        </div>
+      </section>
+
+      <div class="save-bar">
+        <div id="message"></div>
+        <button id="save" class="primary">保存设置</button>
+      </div>
+    </main>
+
+    <template id="provider-template">
+      <article class="custom-provider">
+        <div class="custom-header">
+          <label class="enabled"><input type="checkbox" data-field="enabled" checked /><span>启用</span></label>
+          <button class="danger" data-action="remove">删除</button>
+        </div>
+        <div class="form-grid custom-fields">
+          <label>服务名称<input data-field="name" placeholder="我的翻译服务" /></label>
+          <label>接口类型
+            <select data-field="protocol">
+              <option value="aitran-json">aiTran JSON 批量接口</option>
+              <option value="openai-compatible">OpenAI Chat Completions 兼容</option>
+            </select>
+          </label>
+          <label class="wide">请求 URL<input data-field="url" type="url" placeholder="https://example.com/api/translate" /></label>
+          <label class="wide">API Key<input data-field="apiKey" type="password" autocomplete="off" placeholder="可选，仅保存在本地" /></label>
+        </div>
+        <div class="openai-settings" data-section="openai">
+          <div class="form-grid custom-fields">
+            <label>模型<input data-field="model" placeholder="gpt-4.1-mini" /></label>
+            <label>Temperature<input data-field="temperature" type="number" min="0" max="2" step="0.1" /></label>
+            <label>每次最大段落数<input data-field="maxBatchSize" type="number" min="1" max="20" step="1" /></label>
+            <label>批量翻译模式
+              <select data-field="batchMode">
+                <option value="compatibility">兼容模式（%% 分隔）</option>
+                <option value="independent">逐段模式（更稳定）</option>
+              </select>
+            </label>
+          </div>
+          <details class="prompt-settings">
+            <summary>提示词设置 <small>支持 {{to}}、{{from}}、{{text}}、{{title}}</small></summary>
+            <div class="prompt-grid">
+              <label>系统提示词<textarea data-field="systemPrompt" rows="10"></textarea></label>
+              <label>单段提示词<textarea data-field="singlePrompt" rows="4"></textarea></label>
+              <label>Subtitle Prompt<textarea data-field="subtitlePrompt" rows="4"></textarea></label>
+              <label>多段提示词<textarea data-field="multiPrompt" rows="5"></textarea></label>
+            </div>
+            <div class="prompt-help">
+              <code>{{to}}</code> 目标语言 · <code>{{from}}</code> 源语言 · <code>{{text}}</code> 待翻译文本 · <code>{{title}}</code> 页面或文档标题。多段文本以单独一行 <code>%%</code> 分隔，模型必须按相同数量返回。
+            </div>
+            <button class="secondary prompt-reset" data-action="resetPrompts" type="button">恢复默认提示词</button>
+          </details>
+        </div>
+        <div class="test-row"><button class="secondary" data-action="test">测试连接</button><span data-field="testResult"></span></div>
+      </article>
+    </template>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

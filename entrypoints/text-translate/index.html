@@ -1,0 +1,18 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>aiTran 文本翻译</title></head>
+<body><main class="shell">
+  <header class="app-header"><div class="brand"><div class="brand-mark">AI</div><div><h1>文本翻译</h1><p class="subtitle">使用 aiTran 免费服务或你的自定义接口翻译长文本</p></div></div><div class="header-actions"><button id="open-options" class="ghost">设置</button></div></header>
+  <section class="card">
+    <div class="toolbar">
+      <label>服务<select id="provider"></select></label>
+      <label>源语言<select id="source-language"></select></label>
+      <button id="swap" class="ghost" title="交换语言">⇄</button>
+      <label>目标语言<select id="target-language"></select></label>
+      <span class="spacer"></span><button id="clear" class="ghost">清空</button><button id="translate" class="primary">开始翻译</button>
+    </div>
+    <div id="status" class="status-line">输入文本后开始翻译</div>
+    <div class="editor-grid">
+      <section class="editor-panel"><div class="panel-title"><span>原文</span><span id="input-count" class="counter">0 字符</span></div><textarea id="input" placeholder="粘贴或输入需要翻译的文本…"></textarea></section>
+      <section class="editor-panel"><div class="panel-title"><span>译文</span><button id="copy" class="secondary">复制译文</button></div><div id="output" class="output"></div></section>
+    </div>
+  </section>
+</main><script type="module" src="./main.ts"></script></body></html>

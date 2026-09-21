@@ -1,0 +1,12 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width,initial-scale=1.0"/><title>aiTran 文档翻译</title></head>
+<body><main class="shell">
+  <header class="app-header"><div class="brand"><div class="brand-mark">AI</div><div><h1>文档翻译</h1><p class="subtitle">本地解析文档，文本直接发送到你选择的翻译服务</p></div></div><div class="header-actions"><button id="open-text" class="ghost">文本翻译</button><button id="open-options" class="ghost">设置</button></div></header>
+  <section class="card">
+    <div class="toolbar"><label>服务<select id="provider"></select></label><label>源语言<select id="source-language"></select></label><label>目标语言<select id="target-language"></select></label><span class="spacer"></span><button id="choose" class="secondary">选择文件</button><input id="file-input" type="file" hidden accept=".pdf,.txt,.md,.markdown,.html,.htm,.srt,.vtt,text/plain,application/pdf,text/html"/></div>
+    <div id="status" class="status-line">支持 PDF、TXT、Markdown、HTML、SRT 和 VTT</div>
+    <div id="drop-zone" class="drop-zone"><div><div class="drop-icon">⇧</div><h2>拖放文档到这里</h2><p>文件只在本地解析；翻译文本会发送到所选服务</p></div></div>
+    <div id="file-info" class="file-info"><div id="file-badge" class="file-badge">FILE</div><div class="file-meta"><div id="file-name" class="file-name"></div><div id="file-size" class="file-size"></div></div><button id="remove" class="danger">移除</button></div>
+    <div id="preview-grid" class="preview-grid"><div id="source-preview" class="preview"></div><div id="target-preview" class="preview"></div></div>
+    <div id="document-actions" class="document-actions"><button id="download" class="secondary" disabled>下载译文</button><button id="translate" class="primary" disabled>翻译文档</button></div>
+  </section>
+</main><script type="module" src="./main.ts"></script></body></html>
