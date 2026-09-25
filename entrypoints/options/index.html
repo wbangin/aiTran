@@ -5,11 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="wxt.open_in_tab" content="true" />
     <title>aiTran 设置</title>
+    <link rel="icon" type="image/png" href="/icons/32.png" />
   </head>
   <body>
     <main class="page">
       <header class="hero">
-        <div class="brand-mark">AI</div>
+        <img class="brand-mark" src="/icons/128.png" alt="AiT" />
         <div>
           <h1>aiTran 设置</h1>
           <p>免费、无会员、隐私优先的双语网页翻译</p>
@@ -43,7 +44,18 @@
           <label class="feature-setting"><input type="checkbox" id="selection-translation" /><span><strong>划词翻译</strong><small>跟随当前网页翻译服务：Google、Microsoft 或自定义 API</small></span></label>
           <label class="feature-setting"><input type="checkbox" id="hover-translation" /><span><strong>鼠标悬停翻译</strong><small id="hover-shortcut-help">按住 Alt 并悬停 650ms 后翻译段落</small></span></label>
           <label class="feature-setting"><input type="checkbox" id="input-translation" /><span><strong>输入框翻译</strong><small id="input-shortcut-help">聚焦输入框后按 Alt+I</small></span></label>
-          <label class="feature-setting"><input type="checkbox" id="floating-ball" /><span><strong>页面悬浮按钮</strong><small>在网页右侧显示“译/原”快捷按钮</small></span></label>
+          <label class="feature-setting"><input type="checkbox" id="floating-ball" /><span><strong>页面悬浮按钮</strong><small>在网页右侧显示 AiT 悬浮球，点击展开翻译与 AI 总结</small></span></label>
+        </div>
+        <div class="floating-appearance">
+          <div class="floating-appearance-controls">
+          <label for="floating-ball-transparency">悬浮球透明度 <output id="floating-ball-transparency-value" for="floating-ball-transparency">40%</output></label>
+          <input id="floating-ball-transparency" type="range" min="0" max="80" step="5" value="40" aria-describedby="floating-ball-transparency-help" />
+          <p id="floating-ball-transparency-help">0% 为不透明，数值越大越透明。拖动即可预览，保存后应用到网页。实际悬浮球在悬停、聚焦或展开时恢复实色。</p>
+          </div>
+          <div class="floating-preview">
+            <div class="floating-preview-stage"><div id="floating-ball-preview"></div></div>
+            <small id="floating-ball-preview-caption">实时预览 · 实际大小</small>
+          </div>
         </div>
       </section>
 
@@ -59,13 +71,14 @@
 
       <section class="card">
         <div class="section-heading">
-          <div><h2>自定义服务</h2><p>使用自己的 URL 和 API Key，可添加多个服务</p></div>
-          <button id="add-provider" class="secondary">添加服务</button>
+          <div><h2>自定义服务</h2><p>使用自己的 HTTPS URL 和 API Key，可添加多个服务。HTTP 仅允许 localhost、127.0.0.0/8 或 [::1] 本机回环地址；不跟随接口重定向，请填写最终接口地址。配置只保存在当前浏览器，不会随安装包发布。</p></div>
+          <div class="provider-actions"><button id="add-provider" class="secondary">添加服务</button></div>
         </div>
         <div id="custom-providers" class="custom-list"></div>
         <div class="protocol">
           <strong>接口协议</strong>
           <code>支持 aiTran JSON 批量协议，以及 OpenAI / OpenRouter / Ollama 等 Chat Completions 兼容接口</code>
+          <p>AI 页面总结仅支持 OpenAI Chat Completions 兼容的自定义 API，请填写请求 URL、模型和服务所需的 API Key。无需安装本机助手。</p>
         </div>
       </section>
 
@@ -89,22 +102,22 @@
               <option value="openai-compatible">OpenAI Chat Completions 兼容</option>
             </select>
           </label>
-          <label class="wide">请求 URL<input data-field="url" type="url" placeholder="https://example.com/api/translate" /></label>
-          <label class="wide">API Key<input data-field="apiKey" type="password" autocomplete="off" placeholder="可选，仅保存在本地" /></label>
+          <label class="wide" data-section="url-field">请求 URL<input data-field="url" type="url" placeholder="https://example.com/api/translate" /><small data-section="openai-url-help" hidden>支持基础地址或完整接口地址；自动补上 /chat/completions，已包含时不重复添加，保留原有版本路径和查询参数。</small></label>
+          <label class="wide" data-section="key-field"><span data-label="key">API Key</span><input data-field="apiKey" type="password" autocomplete="off" placeholder="可选，仅保存在本地" /></label>
         </div>
         <div class="openai-settings" data-section="openai">
           <div class="form-grid custom-fields">
             <label>模型<input data-field="model" placeholder="gpt-4.1-mini" /></label>
-            <label>Temperature<input data-field="temperature" type="number" min="0" max="2" step="0.1" /></label>
-            <label>每次最大段落数<input data-field="maxBatchSize" type="number" min="1" max="20" step="1" /></label>
-            <label>批量翻译模式
+            <label data-openai-only>Temperature<input data-field="temperature" type="number" min="0" max="2" step="0.1" /></label>
+            <label data-openai-only>每次最大段落数<input data-field="maxBatchSize" type="number" min="1" max="20" step="1" /></label>
+            <label data-openai-only>批量翻译模式
               <select data-field="batchMode">
                 <option value="compatibility">兼容模式（%% 分隔）</option>
                 <option value="independent">逐段模式（更稳定）</option>
               </select>
             </label>
           </div>
-          <details class="prompt-settings">
+          <details class="prompt-settings" data-openai-only>
             <summary>提示词设置 <small>支持 {{to}}、{{from}}、{{text}}、{{title}}</small></summary>
             <div class="prompt-grid">
               <label>系统提示词<textarea data-field="systemPrompt" rows="10"></textarea></label>

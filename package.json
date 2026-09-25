@@ -1,15 +1,17 @@
 {
   "name": "aitran",
-  "version": "0.3.8",
+  "version": "0.3.21",
   "private": true,
   "type": "module",
   "description": "Free, privacy-first bilingual webpage translator browser extension.",
   "scripts": {
+    "icons:generate": "node scripts/generate-icons.mjs",
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
     "build": "wxt build",
     "build:firefox": "wxt build -b firefox",
     "zip": "wxt zip",
+    "release": "npm run typecheck && npm run build && npm run build:firefox && node scripts/package-release.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",

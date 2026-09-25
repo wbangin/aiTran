@@ -1,10 +1,12 @@
 import { browser } from 'wxt/browser';
 import './style.css';
-import { LANGUAGES } from '../../src/shared/constants';
+import { LANGUAGES, normalizeFloatingBallTransparency } from '../../src/shared/constants';
 import { errorMessage } from '../../src/shared/errors';
 import { loadShortcutLabels } from '../../src/shared/shortcuts';
 import { createId } from '../../src/shared/id';
 import { DEFAULT_PROMPT_CONFIG, normalizeCustomProviderConfig } from '../../src/shared/prompts';
+import { resolveChatCompletionsUrl, validateCustomProviderUrl } from '../../src/shared/provider-url';
+import { createFloatingBallPreview } from '../../src/ui/floating-ball-preview';
 import type { CustomProviderConfig, RuntimeMessage, Settings } from '../../src/shared/types';
 
 const providerSelect = document.querySelector<HTMLSelectElement>('#default-provider')!;
@@ -19,12 +21,26 @@ const selectionTranslationInput = document.querySelector<HTMLInputElement>('#sel
 const hoverTranslationInput = document.querySelector<HTMLInputElement>('#hover-translation')!;
 const inputTranslationInput = document.querySelector<HTMLInputElement>('#input-translation')!;
 const floatingBallInput = document.querySelector<HTMLInputElement>('#floating-ball')!;
+const floatingTransparencyInput = document.querySelector<HTMLInputElement>('#floating-ball-transparency')!;
+const floatingTransparencyValue = document.querySelector<HTMLOutputElement>('#floating-ball-transparency-value')!;
+const updateFloatingPreview = createFloatingBallPreview(document.querySelector<HTMLElement>('#floating-ball-preview')!);
+const floatingPreviewCaption = document.querySelector<HTMLElement>('#floating-ball-preview-caption')!;
 const customList = document.querySelector<HTMLDivElement>('#custom-providers')!;
 const template = document.querySelector<HTMLTemplateElement>('#provider-template')!;
 const addButton = document.querySelector<HTMLButtonElement>('#add-provider')!;
 const saveButton = document.querySelector<HTMLButtonElement>('#save')!;
 const messageElement = document.querySelector<HTMLDivElement>('#message')!;
 let settings: Settings;
+
+function updateFloatingAppearance(): void {
+  floatingTransparencyValue.value = `${floatingTransparencyInput.value}%`;
+  floatingTransparencyInput.setAttribute('aria-valuetext', `${floatingTransparencyInput.value}% 透明`);
+  floatingTransparencyInput.disabled = !floatingBallInput.checked;
+  updateFloatingPreview(Number(floatingTransparencyInput.value));
+  floatingPreviewCaption.textContent = floatingBallInput.checked ? '实时预览 · 实际大小' : '悬浮球已关闭 · 外观预览';
+}
+floatingTransparencyInput.addEventListener('input', updateFloatingAppearance);
+floatingBallInput.addEventListener('change', updateFloatingAppearance);
 
 function setMessage(message: string, type: 'normal' | 'ok' | 'error' = 'normal'): void {
   messageElement.textContent = message;
@@ -39,6 +55,14 @@ function fillLanguages(select: HTMLSelectElement, includeAuto: boolean): void {
 
 function field<T extends Element>(container: HTMLElement, name: string): T {
   return container.querySelector<T>(`[data-field="${name}"]`)!;
+}
+
+function completeOpenAiUrl(element: HTMLElement): void {
+  if (field<HTMLSelectElement>(element, 'protocol').value !== 'openai-compatible') return;
+  const input = field<HTMLInputElement>(element, 'url');
+  if (!input.value.trim()) return;
+  try { input.value = resolveChatCompletionsUrl(input.value).href; }
+  catch { /* Leave incomplete input for the existing save/test validation. */ }
 }
 
 function readProvider(element: HTMLElement): CustomProviderConfig {
@@ -111,8 +135,16 @@ function renderProvider(provider: CustomProviderConfig): void {
   field<HTMLTextAreaElement>(element, 'subtitlePrompt').value = normalized.subtitlePrompt;
   field<HTMLTextAreaElement>(element, 'multiPrompt').value = normalized.multiPrompt;
   const openAiSection = element.querySelector<HTMLElement>('[data-section="openai"]')!;
-  const updateProtocolView = () => openAiSection.classList.toggle('visible', field<HTMLSelectElement>(element, 'protocol').value === 'openai-compatible');
+  const updateProtocolView = () => {
+    const protocol = field<HTMLSelectElement>(element, 'protocol').value;
+    const openai = protocol === 'openai-compatible';
+    openAiSection.classList.toggle('visible', openai);
+    element.querySelector<HTMLElement>('[data-section="openai-url-help"]')!.hidden = !openai;
+    field<HTMLInputElement>(element, 'url').placeholder = openai ? 'https://example.com/v1（自动补全 /chat/completions）' : 'https://example.com/api/translate';
+    completeOpenAiUrl(element);
+  };
   field<HTMLSelectElement>(element, 'protocol').addEventListener('change', updateProtocolView);
+  field<HTMLInputElement>(element, 'url').addEventListener('blur', () => completeOpenAiUrl(element));
   updateProtocolView();
 
   element.querySelector<HTMLButtonElement>('[data-action="remove"]')!.addEventListener('click', () => {
@@ -132,11 +164,13 @@ function renderProvider(provider: CustomProviderConfig): void {
   element.querySelector<HTMLButtonElement>('[data-action="test"]')!.addEventListener('click', async (event) => {
     const button = event.currentTarget as HTMLButtonElement;
     const resultElement = field<HTMLSpanElement>(element, 'testResult');
+    completeOpenAiUrl(element);
     const current = readProvider(element);
     button.disabled = true;
     resultElement.textContent = '测试中…';
     resultElement.className = '';
     try {
+      validateCustomProviderUrl(current.url);
       const result = await browser.runtime.sendMessage({
         type: 'TEST_CUSTOM_PROVIDER',
         provider: current
@@ -155,12 +189,12 @@ function renderProvider(provider: CustomProviderConfig): void {
 }
 
 function collectSettings(): Settings {
+  customList.querySelectorAll<HTMLElement>('.custom-provider').forEach(completeOpenAiUrl);
   const customProviders = currentCustomProviders();
   for (const provider of customProviders) {
     if (!provider.name) throw new Error('请填写自定义服务名称');
     if (!provider.url) throw new Error(`请填写“${provider.name}”的请求 URL`);
-    const url = new URL(provider.url);
-    if (!['http:', 'https:'].includes(url.protocol)) throw new Error(`“${provider.name}”只支持 HTTP 或 HTTPS URL`);
+    validateCustomProviderUrl(provider.url);
     if (provider.protocol === 'openai-compatible' && !provider.model) throw new Error(`请填写“${provider.name}”的模型名称`);
   }
   return {
@@ -174,6 +208,7 @@ function collectSettings(): Settings {
     hoverTranslation: hoverTranslationInput.checked,
     inputTranslation: inputTranslationInput.checked,
     floatingBall: floatingBallInput.checked,
+    floatingBallTransparency: normalizeFloatingBallTransparency(Number(floatingTransparencyInput.value)),
     customProviders
   };
 }
@@ -197,6 +232,8 @@ async function initialize(): Promise<void> {
   hoverTranslationInput.checked = settings.hoverTranslation;
   inputTranslationInput.checked = settings.inputTranslation;
   floatingBallInput.checked = settings.floatingBall;
+  floatingTransparencyInput.value = String(normalizeFloatingBallTransparency(settings.floatingBallTransparency));
+  updateFloatingAppearance();
 }
 
 addButton.addEventListener('click', () => {

@@ -22,7 +22,7 @@ function rememberAndHideOriginal(original: HTMLElement): void {
   original.style.setProperty('display', 'none', 'important');
 }
 
-function restoreOriginalDisplay(original: HTMLElement): void {
+export function restoreOriginalDisplay(original: HTMLElement): void {
   if (original.dataset.aitranOriginalDisplay === undefined) return;
 
   const display = original.dataset.aitranOriginalDisplay;
@@ -36,8 +36,17 @@ function restoreOriginalDisplay(original: HTMLElement): void {
 function applyTranslationMode(translation: HTMLElement, original: HTMLElement, mode: DisplayMode): void {
   const placement = (translation.dataset.aitranPlacement ?? 'after') as TranslationPlacement;
 
+  // A translated label may live inside a link or button on application pages.
+  // Hiding that element would make the action unreachable in translated-only mode.
+  if (original.closest('a,button,label,summary,legend,[role="button"],[role="menuitem"],[role="tab"]')) {
+    restoreOriginalDisplay(original);
+    translation.removeAttribute('data-aitran-mode');
+    if (placement === 'inside' && translation.parentElement !== original) original.append(translation);
+    return;
+  }
+
   if (mode === 'translation-only') {
-    if (translation.parentElement === original) original.insertAdjacentElement('afterend', translation);
+    if (translation.parentElement === original) original.after(translation);
     translation.dataset.aitranMode = 'translation-only';
     rememberAndHideOriginal(original);
     return;
@@ -46,7 +55,7 @@ function applyTranslationMode(translation: HTMLElement, original: HTMLElement, m
   restoreOriginalDisplay(original);
   translation.removeAttribute('data-aitran-mode');
   if (placement === 'inside') original.append(translation);
-  else if (translation.previousElementSibling !== original) original.insertAdjacentElement('afterend', translation);
+  else if (translation.previousElementSibling !== original) original.after(translation);
 }
 
 export function insertTranslationForMode(
@@ -57,7 +66,7 @@ export function insertTranslationForMode(
 ): void {
   translation.dataset.aitranPlacement = placement;
   if (placement === 'inside') original.append(translation);
-  else original.insertAdjacentElement('afterend', translation);
+  else original.after(translation);
   applyTranslationMode(translation, original, mode);
 }
 

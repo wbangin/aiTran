@@ -1,0 +1,20 @@
+:host { all:initial; }
+* { box-sizing:border-box; }
+.dock { --paper:#fff; --ink:#727d92; --line:#e4e8f0; --soft:#f5f6fb; --accent:#5847df; --tint:#eeeaff; display:flex; align-items:center; gap:7px; position:relative; font:12px/1.5 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; }
+.tools { display:flex; align-items:center; gap:2px; padding:4px; background:var(--paper); border:1px solid var(--line); border-radius:13px; box-shadow:0 4px 16px #24304922; }
+button { border:0; padding:0; cursor:pointer; position:relative; font:inherit; }
+.action { display:grid; place-items:center; width:32px; height:32px; border-radius:9px; background:transparent; color:var(--ink); }
+.action:hover { background:var(--soft); color:var(--accent); }
+.action[data-active=true] { background:var(--tint); color:var(--accent); }
+svg { width:18px; height:18px; pointer-events:none; }
+.ball { --visible-alpha:var(--ball-alpha,.6); display:grid; place-items:center; width:30px; height:30px; border-radius:50%; color:#fff; background:linear-gradient(145deg,rgba(104,80,239,var(--visible-alpha)),rgba(64,91,224,var(--visible-alpha))); box-shadow:0 2px 8px rgba(89,72,228,calc(var(--visible-alpha) * .22)); }
+.ball:hover,.ball:focus-visible,.ball[aria-expanded=true] { --visible-alpha:1; }
+.ball[aria-expanded=true] { box-shadow:0 0 0 2px var(--tint),0 2px 8px #5948e433; }
+.ball > svg { display:block; width:30px; height:30px; pointer-events:none; }
+button:focus-visible { outline:2px solid #8581f3; outline-offset:3px; }
+button:disabled { opacity:.5; cursor:wait; }
+[data-tooltip]:hover:after,[data-tooltip]:focus-visible:after { content:attr(data-tooltip); position:absolute; bottom:calc(100% + 8px); right:0; width:max-content; max-width:min(210px,calc(100vw - 30px)); padding:5px 8px; background:var(--paper); color:var(--ink); border:1px solid var(--line); border-radius:6px; box-shadow:0 4px 12px #0002; font:11px/1.5 -apple-system,BlinkMacSystemFont,'PingFang SC',sans-serif; pointer-events:none; z-index:1; }
+.error { position:absolute; right:0; top:calc(100% + 8px); width:max-content; max-width:min(280px,calc(100vw - 24px)); margin:0; padding:8px 10px; background:var(--paper); color:#b4233f; border:1px solid var(--line); border-radius:8px; overflow-wrap:anywhere; }
+[hidden] { display:none!important; }
+@media(prefers-color-scheme:dark) { .dock { --paper:#252936; --ink:#acb4c6; --line:#3c4251; --soft:#303547; --accent:#bfb5ff; --tint:#39324f; } .error { color:#ff9dae; } }
+@media(pointer:coarse) { .action { width:44px; height:44px; } .ball:before { content:''; position:absolute; inset:-7px; border-radius:50%; } }

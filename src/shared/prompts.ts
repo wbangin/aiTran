@@ -62,6 +62,9 @@ export function languagePromptName(language: string): string {
 }
 
 export function normalizeCustomProviderConfig(provider: Partial<CustomProviderConfig>): CustomProviderConfig {
+  if (provider.protocol !== undefined && !['aitran-json', 'openai-compatible'].includes(provider.protocol)) {
+    throw new Error('此服务协议已不再支持，请配置自定义 API 服务');
+  }
   return {
     id: provider.id ?? '',
     name: provider.name ?? '',

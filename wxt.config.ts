@@ -2,17 +2,24 @@ import { defineConfig } from 'wxt';
 
 export default defineConfig({
   srcDir: '.',
-  manifest: {
+  manifest: (env) => ({
     name: 'aiTran',
     short_name: 'aiTran',
     description: 'Free bilingual webpage, text, selection, hover, input, and document translation.',
-    version: '0.3.8',
-    permissions: ['storage', 'activeTab', 'tabs', 'contextMenus'],
-    host_permissions: [
-      '<all_urls>',
-      'https://translate.googleapis.com/*',
-      'https://edge.microsoft.com/*'
-    ],
+    version: '0.3.21',
+    permissions: ['storage', 'contextMenus'],
+    host_permissions: ['<all_urls>'],
+    ...(env.browser === 'firefox' ? {
+      browser_specific_settings: {
+        gecko: {
+          id: 'aitran@wbangin.github.io',
+          strict_min_version: '140.0',
+          data_collection_permissions: {
+            required: ['websiteContent', 'personalCommunications']
+          }
+        }
+      }
+    } : {}),
     commands: {
       toggleTranslation: {
         suggested_key: { default: 'Alt+A', mac: 'Command+Shift+L' },
@@ -38,5 +45,5 @@ export default defineConfig({
         128: 'icons/128.png'
       }
     }
-  }
+  })
 });

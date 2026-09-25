@@ -8,7 +8,7 @@ button, input, select, textarea { font: inherit; }
 .shell { width: min(1120px,calc(100% - 40px)); margin: 0 auto; padding: 25px 0 52px; }
 .app-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
 .brand { display:flex; align-items:center; gap:12px; }
-.brand-mark { display:grid; place-items:center; width:42px; height:42px; border-radius:12px; color:white; font-size:13px; font-weight:850; background:linear-gradient(135deg,#4f46e5,#2563eb); box-shadow:0 10px 25px rgba(79,70,229,.20); }
+.brand-mark { display:block; width:42px; height:42px; flex-shrink:0; }
 h1 { margin:0; font-size:21px; letter-spacing:-.5px; } .subtitle { margin:4px 0 0; color:#858b9d; font-size:12px; }
 .header-actions { display:flex; gap:9px; }
 .card { border:1px solid #e0e3ec; border-radius:14px; background:#fff; box-shadow:0 9px 30px rgba(30,36,68,.055); }

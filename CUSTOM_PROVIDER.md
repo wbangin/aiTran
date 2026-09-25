@@ -1,6 +1,8 @@
 # aiTran 自定义翻译服务
 
-aiTran 支持两种自定义接口模式。
+aiTran 支持两种自定义 HTTP 接口。AI 页面总结仅使用 OpenAI Chat Completions 兼容接口。
+
+自 v0.3.19 起，公网和局域网服务必须使用 HTTPS。HTTP 仅允许 `localhost`、`127.0.0.0/8` 或 `[::1]` 本机回环地址，不能使用带账号密码的 URL。所有接口请求禁止重定向，请填写最终端点地址（否则连接会失败）。已有 HTTP 配置不会删除，但不符合要求的地址不会发送请求，需要自行改为 HTTPS。API Key 保存在浏览器本地扩展存储，通过请求头发送至配置的服务；它不会被构建脚本读取或放入发布 ZIP。本机服务是否将内容继续转发至外部，取决于该服务自身。
 
 ## 1. aiTran JSON 批量接口
 
@@ -38,6 +40,8 @@ API Key 为空时不会发送 Authorization。
 ## 2. OpenAI Chat Completions 兼容接口
 
 适用于 OpenAI、OpenRouter、Ollama 以及实现兼容 API 的服务：
+
+选择此协议后，请求 URL 可以填写基础地址（如 `https://example.com/v1`）或完整接口地址。扩展会自动补上 `/chat/completions`，已包含该后缀时不会重复添加；保留原有路径前缀、版本号和查询参数，处理尾部斜杠。此规则同时适用于翻译、测试连接和 AI 总结，不影响 aiTran JSON 协议。设置页在切换协议、离开 URL 输入框、测试或保存时会显示补全后的地址。
 
 ```http
 POST https://api.openai.com/v1/chat/completions

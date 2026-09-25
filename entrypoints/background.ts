@@ -1,8 +1,9 @@
 import { defineBackground } from 'wxt/utils/define-background';
 import { browser } from 'wxt/browser';
 import { translateBatch } from '../src/core/translation-service';
+import { summarizePageContent } from '../src/core/summary-service';
 import { CustomProvider } from '../src/providers/custom';
-import { aggregatePageStatuses, EMPTY_PAGE_STATUS } from '../src/core/page-status';
+import { aggregatePageStatuses, EMPTY_PAGE_STATUS, pageActionForStatus } from '../src/core/page-status';
 import { errorMessage } from '../src/shared/errors';
 import type { PageStatus, RuntimeMessage } from '../src/shared/types';
 import { getSettings, saveSettings } from '../src/storage/settings';
@@ -11,6 +12,7 @@ const MENU_TRANSLATE_PAGE = 'aitran-translate-page';
 const MENU_TRANSLATE_SELECTION = 'aitran-translate-selection';
 const MENU_TRANSLATE_INPUT = 'aitran-translate-input';
 const MENU_TEXT_TRANSLATOR = 'aitran-text-translator';
+const MENU_SUMMARIZE_PAGE = 'aitran-summarize-page';
 const OPTIMISTIC_FRAME_ID = -1;
 const frameStatuses = new Map<number, Map<number, PageStatus>>();
 
@@ -65,9 +67,10 @@ async function recordFrameStatus(tabId: number, frameId: number, status: PageSta
 
 async function toggleTabPage(tabId: number): Promise<PageStatus> {
   const current = await refreshTabStatus(tabId);
-  if (current.translating || current.error) return current;
+  const action = pageActionForStatus(current);
+  if (action === 'blocked') return current;
 
-  if (current.translated) {
+  if (action === 'restore') {
     frameStatuses.set(tabId, new Map());
     await publishTabStatus(tabId);
     await sendToTab(tabId, { type: 'RESTORE_PAGE' });
@@ -86,6 +89,7 @@ async function toggleTabPage(tabId: number): Promise<PageStatus> {
 function createContextMenus(): void {
   browser.contextMenus.removeAll().then(() => {
     browser.contextMenus.create({ id: MENU_TRANSLATE_PAGE, title: 'aiTran：翻译网页 / 显示原文', contexts: ['page'] });
+    browser.contextMenus.create({ id: MENU_SUMMARIZE_PAGE, title: 'aiTran：AI 总结当前网页', contexts: ['page'] });
     browser.contextMenus.create({ id: MENU_TRANSLATE_SELECTION, title: 'aiTran：翻译选中文本', contexts: ['selection'] });
     browser.contextMenus.create({ id: MENU_TRANSLATE_INPUT, title: 'aiTran：翻译输入框', contexts: ['editable'] });
     browser.contextMenus.create({ id: MENU_TEXT_TRANSLATOR, title: 'aiTran：打开文本翻译', contexts: ['page', 'selection'] });
@@ -109,6 +113,33 @@ export default defineBackground(() => {
         return await getSettings();
       case 'SAVE_SETTINGS':
         return await saveSettings(message.settings);
+      case 'SET_DISPLAY_MODE': {
+        if (!['bilingual', 'translation-only'].includes(message.displayMode)) throw new Error('无效显示模式');
+        const settings = await saveSettings({ ...await getSettings(), displayMode: message.displayMode });
+        const tabId = sender.tab?.id ?? await activeTabId();
+        if (tabId !== undefined) await browser.tabs.sendMessage(tabId, { type: 'REFRESH_SETTINGS' } satisfies RuntimeMessage);
+        return settings;
+      }
+      case 'OPEN_OPTIONS_PAGE':
+        await browser.runtime.openOptionsPage();
+        return { ok: true };
+      case 'OPEN_ACTIVE_PAGE_SUMMARY': {
+        const tabId = sender.tab?.id ?? await activeTabId();
+        if (tabId === undefined) return { ok: false, error: '找不到当前标签页' };
+        try {
+          return await browser.tabs.sendMessage(tabId, { type: 'OPEN_PAGE_SUMMARY' } satisfies RuntimeMessage, { frameId: 0 });
+        } catch {
+          return { ok: false, error: '此页面暂时无法总结，请刷新网页后再试。浏览器内部页面不支持此功能。' };
+        }
+      }
+      case 'SUMMARIZE_PAGE': {
+        try {
+          const result = await summarizePageContent(message.request, await getSettings());
+          return { ok: true, ...result };
+        } catch (error) {
+          return { ok: false, error: errorMessage(error) };
+        }
+      }
       case 'GET_ACTIVE_PAGE_STATUS': {
         const tabId = await activeTabId();
         return tabId === undefined ? { ...EMPTY_PAGE_STATUS } : await refreshTabStatus(tabId);
@@ -127,8 +158,8 @@ export default defineBackground(() => {
         return await translateBatch(message.request, settings);
       }
       case 'TEST_CUSTOM_PROVIDER': {
-        const provider = new CustomProvider(message.provider);
         try {
+          const provider = new CustomProvider(message.provider);
           const result = await provider.translate({
             texts: ['Hello'],
             sourceLanguage: 'en',
@@ -153,6 +184,9 @@ export default defineBackground(() => {
 
   browser.contextMenus.onClicked.addListener(async (info, tab) => {
     if (info.menuItemId === MENU_TRANSLATE_PAGE && tab?.id !== undefined) await toggleTabPage(tab.id);
+    if (info.menuItemId === MENU_SUMMARIZE_PAGE && tab?.id !== undefined) {
+      await browser.tabs.sendMessage(tab.id, { type: 'OPEN_PAGE_SUMMARY' } satisfies RuntimeMessage, { frameId: 0 }).catch(() => undefined);
+    }
     if (info.menuItemId === MENU_TRANSLATE_INPUT) await sendToTab(tab?.id, { type: 'TRANSLATE_INPUT' });
     if (info.menuItemId === MENU_TRANSLATE_SELECTION && info.selectionText) {
       await sendToTab(tab?.id, { type: 'TRANSLATE_CONTEXT_SELECTION', text: info.selectionText });

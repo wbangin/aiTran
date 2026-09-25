@@ -42,8 +42,19 @@ import { normalizeCustomProviderConfig } from '../src/shared/prompts';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('OpenAI-compatible custom provider', () => {
+  it.each(['aitran-json', 'openai-compatible'] as const)('blocks existing unsafe settings before %s sends data', async (protocol) => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal('fetch', fetchMock);
+    const provider = new CustomProvider(normalizeCustomProviderConfig({
+      id: 'unsafe', name: 'Unsafe', enabled: true, protocol, model: 'test',
+      url: 'http://example.com/api', apiKey: 'test-key'
+    }));
+    await expect(provider.translate({ texts: ['Hello'], sourceLanguage: 'en', targetLanguage: 'zh-CN', scene: 'test' })).rejects.toThrow('必须使用 HTTPS');
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
   it('sends rendered system and multi-segment prompts', async () => {
     const fetchMock = vi.fn(async (_url: unknown, init?: RequestInit) => {
+      expect(String(_url)).toBe('https://example.com/v1/chat/completions');
       const body = JSON.parse(String(init?.body)) as { model: string; messages: Array<{ role: string; content: string }> };
       expect(body.model).toBe('gpt-test');
       expect(body.messages[0]?.content).toContain('Simplified Chinese');
@@ -63,5 +74,29 @@ describe('OpenAI-compatible custom provider', () => {
     });
     expect(result.translations).toEqual(['你好', '世界']);
     expect(fetchMock).toHaveBeenCalledOnce();
+  });
+
+  it.each(['page', 'test', 'selection'] as const)('completes a base URL for %s requests', async (scene) => {
+    const fetchMock = vi.fn(async (_url: unknown) => new Response(JSON.stringify({ choices: [{ message: { content: '你好' } }] })));
+    vi.stubGlobal('fetch', fetchMock);
+    const provider = new CustomProvider(normalizeCustomProviderConfig({
+      id: 'ai', name: 'AI', enabled: true, protocol: 'openai-compatible', model: 'test-model',
+      url: 'https://example.com/api/coding/v3/?api-version=test', batchMode: 'independent'
+    }));
+    const result = await provider.translate({ texts: ['Hello'], sourceLanguage: 'en', targetLanguage: 'zh-CN', scene });
+    expect(result.translations).toEqual(['你好']);
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://example.com/api/coding/v3/chat/completions?api-version=test');
+  });
+
+  it('does not append a Chat Completions path to the aiTran JSON protocol', async () => {
+    const fetchMock = vi.fn(async (_url: unknown) => new Response(JSON.stringify({ translations: ['你好'] })));
+    vi.stubGlobal('fetch', fetchMock);
+    const provider = new CustomProvider(normalizeCustomProviderConfig({
+      id: 'json', name: 'JSON', enabled: true, protocol: 'aitran-json', url: 'https://example.com/translate/?version=1'
+    }));
+    await provider.translate({ texts: ['Hello'], sourceLanguage: 'en', targetLanguage: 'zh-CN', scene: 'test' });
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(String(fetchMock.mock.calls[0]?.[0])).toBe('https://example.com/translate/?version=1');
   });
 });

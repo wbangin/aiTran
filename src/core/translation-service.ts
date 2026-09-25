@@ -21,9 +21,10 @@ function cacheNamespace(request: TranslateRequest, settings: Settings): string {
   const provider = settings.customProviders.find((item) => item.id === id);
   if (!provider) return `${request.providerId}:${scene}`;
   const promptRevision = stringHash(JSON.stringify({
-    protocol: provider.protocol, model: provider.model, temperature: provider.temperature, batchMode: provider.batchMode,
+    url: provider.url, protocol: provider.protocol, model: provider.model, temperature: provider.temperature, batchMode: provider.batchMode,
     systemPrompt: provider.systemPrompt, singlePrompt: provider.singlePrompt,
-    subtitlePrompt: provider.subtitlePrompt, multiPrompt: provider.multiPrompt
+    subtitlePrompt: provider.subtitlePrompt, multiPrompt: provider.multiPrompt,
+    context: request.context
   }));
   return `${request.providerId}:${scene}:${promptRevision}`;
 }

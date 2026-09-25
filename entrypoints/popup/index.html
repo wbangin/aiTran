@@ -4,15 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>aiTran</title>
+    <link rel="icon" type="image/png" href="/icons/32.png" />
   </head>
   <body>
     <main class="app">
+      <section class="translation-group" aria-label="网页翻译">
       <header class="topbar">
         <div class="brand">
-          <div class="brand-mark">AI</div>
-          <div class="brand-copy"><strong>aiTran</strong><span>网页双语翻译</span></div>
+          <img class="brand-mark" src="/icons/128.png" alt="AiT" />
+          <div class="brand-copy"><strong>aiTran</strong></div>
         </div>
-        <div class="edition-badge"><span></span> 免费版</div>
+        <select id="display-mode" class="mode-action" aria-label="网页翻译显示模式"><option value="bilingual">双语</option><option value="translation-only">仅译文</option></select>
+        <button id="translate" class="primary-action" disabled>翻译网页</button>
       </header>
 
       <section class="control-card" aria-label="翻译配置">
@@ -22,33 +25,30 @@
           <label class="select-shell"><span>目标语言</span><select id="target-language"></select></label>
         </div>
         <div class="service-panel">
-          <span class="field-label">翻译服务</span>
+          <label class="field-label" for="provider">翻译服务</label>
           <select id="provider"></select>
         </div>
+        <div id="status" class="status" role="status" aria-live="polite"></div>
+      </section>
       </section>
 
-      <div id="status" class="status">准备就绪</div>
-
-      <section class="main-action-row">
-        <button id="display-mode" class="mode-action" title="切换双语/仅译文">双语</button>
-        <button id="translate" class="primary-action">翻译网页 <kbd id="page-shortcut">Alt+A</kbd></button>
-      </section>
-
-      <section class="popup-section">
-        <div class="section-heading"><span>翻译工具</span><small>在新页面打开</small></div>
-        <div class="tool-grid">
-          <button class="tool-card" id="text-translate"><span class="tool-icon">T</span><span><strong>文本翻译</strong><small>长文本工作台</small></span><b>›</b></button>
-          <button class="tool-card" id="document-translate"><span class="tool-icon pdf">PDF</span><span><strong>文档翻译</strong><small>PDF / 字幕</small></span><b>›</b></button>
-        </div>
-      </section>
+      <button id="summarize-page" class="summary-action" disabled><img class="summary-icon" src="/icons/32.png" alt="" /><span><strong>AI 总结当前页面</strong><small>核心结论 · 关键要点</small></span><b aria-hidden="true">›</b></button>
 
       <section class="popup-section compact-section">
         <div class="section-heading"><span>页面功能</span><small>作用于当前网页</small></div>
         <div class="feature-grid">
-          <button class="feature-card" id="input-translate"><span class="feature-icon">⌨</span><span>输入框</span><em id="input-shortcut">Alt+I</em></button>
-          <button class="feature-card toggle-card" id="selection-translate" title="划词翻译使用当前选择的翻译服务；已翻译内容会使用本地缓存"><span class="feature-icon">划</span><span>划词</span><i></i></button>
-          <button class="feature-card toggle-card" id="hover-translate"><span class="feature-icon">悬</span><span>悬停</span><i></i></button>
-          <button class="feature-card toggle-card" id="floating-ball"><span class="feature-icon">浮</span><span>悬浮按钮</span><i></i></button>
+          <button class="feature-card toggle-card" id="selection-translate"><span>划词翻译</span><i aria-hidden="true"></i></button>
+          <button class="feature-card toggle-card" id="hover-translate"><span>悬停翻译</span><i aria-hidden="true"></i></button>
+          <button class="feature-card toggle-card" id="floating-ball"><span>悬浮按钮</span><i aria-hidden="true"></i></button>
+          <button class="feature-card" id="input-translate"><span>输入框翻译</span><em id="input-shortcut" hidden></em><b aria-hidden="true">›</b></button>
+        </div>
+      </section>
+
+      <section class="popup-section">
+        <div class="section-heading"><span>更多工具</span><small>在新页面打开</small></div>
+        <div class="tool-grid">
+          <button class="tool-card" id="text-translate"><span class="tool-icon">T</span><span><strong>文本翻译</strong><small>长文本工作台</small></span></button>
+          <button class="tool-card" id="document-translate"><span class="tool-icon pdf">PDF</span><span><strong>文档翻译</strong><small>PDF / 字幕</small></span></button>
         </div>
       </section>
 
@@ -57,7 +57,7 @@
           <button id="options" class="footer-button"><span>⚙</span> 设置</button>
           <button id="more" class="footer-button">隐私</button>
         </div>
-        <span class="version">v0.3.8</span>
+        <span class="version">v0.3.21</span>
       </footer>
     </main>
     <script type="module" src="./main.ts"></script>

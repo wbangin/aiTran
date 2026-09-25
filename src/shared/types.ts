@@ -40,6 +40,7 @@ export interface Settings {
   hoverTranslation: boolean;
   inputTranslation: boolean;
   floatingBall: boolean;
+  floatingBallTransparency: number;
   customProviders: CustomProviderConfig[];
 }
 
@@ -58,6 +59,17 @@ export interface TranslateResult {
   providerId: ProviderId;
   cachedCount: number;
 }
+
+export interface PageSummaryRequest {
+  title: string;
+  text: string;
+  targetLanguage: string;
+  providerId: ProviderId;
+}
+
+export type PageSummaryResponse =
+  | { ok: true; summary: string; providerName: string }
+  | { ok: false; error: string };
 
 export interface ProviderTranslateRequest {
   texts: string[];
@@ -84,6 +96,10 @@ export type RuntimeMessage =
   | { type: 'SAVE_SETTINGS'; settings: Settings }
   | { type: 'TRANSLATE_BATCH'; request: TranslateRequest }
   | { type: 'TEST_CUSTOM_PROVIDER'; provider: CustomProviderConfig }
+  | { type: 'OPEN_ACTIVE_PAGE_SUMMARY' }
+  | { type: 'OPEN_PAGE_SUMMARY' }
+  | { type: 'SUMMARIZE_PAGE'; request: PageSummaryRequest }
+  | { type: 'OPEN_OPTIONS_PAGE' }
   | { type: 'GET_PAGE_STATUS' }
   | { type: 'GET_ACTIVE_PAGE_STATUS' }
   | { type: 'REQUEST_PAGE_STATUS_REPORT' }
@@ -95,6 +111,7 @@ export type RuntimeMessage =
   | { type: 'RESTORE_PAGE' }
   | { type: 'TOGGLE_PAGE' }
   | { type: 'REFRESH_SETTINGS' }
+  | { type: 'SET_DISPLAY_MODE'; displayMode: DisplayMode }
   | { type: 'TRANSLATE_INPUT' }
   | { type: 'TRANSLATE_CONTEXT_SELECTION'; text: string };
 

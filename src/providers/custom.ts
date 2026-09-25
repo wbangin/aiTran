@@ -12,6 +12,9 @@ import type {
   TranslationProvider
 } from '../shared/types';
 import { fetchWithRetry, readJson } from './http';
+import { resolveChatCompletionsUrl, validateCustomProviderUrl } from '../shared/provider-url';
+
+export { validateCustomProviderUrl } from '../shared/provider-url';
 
 interface CustomProviderResponse {
   translations?: Array<string | { text?: string }>;
@@ -22,19 +25,6 @@ interface OpenAIChatResponse {
   choices?: Array<{ message?: { content?: string | Array<{ text?: string }> } }>;
   output_text?: string;
   error?: { message?: string };
-}
-
-export function validateCustomProviderUrl(url: string): URL {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    throw new AiTranError('自定义服务 URL 无效', 'INVALID_CUSTOM_URL');
-  }
-  if (!['http:', 'https:'].includes(parsed.protocol)) {
-    throw new AiTranError('自定义服务只支持 HTTP 或 HTTPS URL', 'INVALID_CUSTOM_URL');
-  }
-  return parsed;
 }
 
 export function parseCustomTranslations(payload: unknown, expectedCount: number): ProviderTranslateResult {
@@ -132,7 +122,7 @@ export class CustomProvider implements TranslationProvider {
   }
 
   private async translateOpenAIBatch(request: ProviderTranslateRequest, texts: string[]): Promise<string[]> {
-    const url = validateCustomProviderUrl(this.config.url);
+    const url = resolveChatCompletionsUrl(this.config.url);
     const joinedText = texts.join(MULTI_PARAGRAPH_SEPARATOR);
     const values = {
       text: joinedText,

@@ -30,7 +30,9 @@ export async function fetchWithRetry(
         ...init,
         signal: timeoutController.signal,
         credentials: 'omit',
-        cache: 'no-store'
+        cache: 'no-store',
+        // Prevent forwarding text or credentials via redirects or TLS downgrades.
+        redirect: 'error'
       });
 
       if (response.ok) return response;

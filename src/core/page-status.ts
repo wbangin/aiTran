@@ -7,6 +7,11 @@ export const EMPTY_PAGE_STATUS: PageStatus = {
   totalBlocks: 0
 };
 
+export function pageActionForStatus(status: PageStatus): 'blocked' | 'restore' | 'translate' {
+  if (status.translating) return 'blocked';
+  return status.translated && !status.error ? 'restore' : 'translate';
+}
+
 export function aggregatePageStatuses(statuses: Iterable<PageStatus>): PageStatus {
   const aggregate: PageStatus = { ...EMPTY_PAGE_STATUS };
 

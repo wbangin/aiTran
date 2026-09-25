@@ -17,8 +17,15 @@ export const DEFAULT_SETTINGS: Settings = {
   hoverTranslation: false,
   inputTranslation: true,
   floatingBall: true,
+  floatingBallTransparency: 40,
   customProviders: []
 };
+
+export function normalizeFloatingBallTransparency(value: unknown): number {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(80, Math.max(0, Math.round(value)))
+    : DEFAULT_SETTINGS.floatingBallTransparency;
+}
 
 export const LANGUAGES = [
   ['auto', '自动检测'],

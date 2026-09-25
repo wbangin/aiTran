@@ -92,7 +92,9 @@ export async function translateTextPieces(
         texts: batchIndexes.map((index) => pieces[index]!.text),
         sourceLanguage: settings.sourceLanguage,
         targetLanguage: settings.targetLanguage,
-        providerId: settings.providerId
+        providerId: settings.providerId,
+        scene,
+        context
       }
     } satisfies RuntimeMessage) as TranslateResult;
     batchIndexes.forEach((pieceIndex, resultIndex) => translated.set(pieceIndex, result.translations[resultIndex] ?? pieces[pieceIndex]!.text));
@@ -110,5 +112,5 @@ export async function translatePlainText(
   scene: TranslationScene = 'text',
   context?: PromptContext
 ): Promise<string> {
-  return await translateTextPieces(splitPlainText(text), settings, onProgress);
+  return await translateTextPieces(splitPlainText(text), settings, onProgress, scene, context);
 }

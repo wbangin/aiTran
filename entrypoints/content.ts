@@ -2,6 +2,7 @@ import { defineContentScript } from 'wxt/utils/define-content-script';
 import { browser } from 'wxt/browser';
 import type { RuntimeMessage } from '../src/shared/types';
 import { PageTranslator } from '../src/core/page-translator';
+import { PageSummaryPanel } from '../src/ui/page-summary';
 
 export default defineContentScript({
   matches: ['<all_urls>'],
@@ -11,9 +12,14 @@ export default defineContentScript({
   runAt: 'document_idle',
   main() {
     const translator = new PageTranslator();
+    const summaryPanel = window.self === window.top ? new PageSummaryPanel() : undefined;
 
     browser.runtime.onMessage.addListener((message: RuntimeMessage) => {
       switch (message.type) {
+        case 'OPEN_PAGE_SUMMARY':
+          if (!summaryPanel) return undefined;
+          summaryPanel.open();
+          return Promise.resolve({ ok: true });
         case 'GET_PAGE_STATUS':
           return Promise.resolve(translator.getStatus());
         case 'REQUEST_PAGE_STATUS_REPORT':

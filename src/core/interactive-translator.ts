@@ -2,6 +2,7 @@ import { browser } from 'wxt/browser';
 import { normalizeText } from './dom';
 import { errorMessage } from '../shared/errors';
 import { providerIdForInteractiveScene } from '../shared/provider-routing';
+import { FloatingToolbar } from '../ui/floating-toolbar';
 import type { RuntimeMessage, Settings, TranslateResult } from '../shared/types';
 
 const UI_ATTRIBUTE = 'data-aitran-ui';
@@ -13,31 +14,13 @@ function installInteractiveStyles(): void {
   style.id = INTERACTIVE_STYLE_ID;
   style.setAttribute(UI_ATTRIBUTE, 'true');
   style.textContent = `
-    .aitran-selection-trigger, .aitran-float-ball {
+    .aitran-selection-trigger {
       position: fixed !important; z-index: 2147483645 !important; display: grid !important; place-items: center !important;
       border: 0 !important; color: #fff !important; background: linear-gradient(135deg,#4f46e5,#2563eb) !important;
       box-shadow: 0 7px 20px rgba(37,70,180,.24) !important; cursor: pointer !important;
       font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif !important;
     }
     .aitran-selection-trigger { width: 30px !important; height: 30px !important; border-radius: 9px !important; font-size: 12px !important; }
-    .aitran-float-ball {
-      right: 0 !important; top: 55% !important; width: 30px !important; height: 32px !important;
-      border: 1px solid rgba(255,255,255,.58) !important; border-right: 0 !important;
-      border-radius: 10px 0 0 10px !important; font-size: 11px !important; font-weight: 750 !important;
-      background: linear-gradient(135deg,rgba(79,70,229,.58),rgba(37,99,235,.58)) !important;
-      box-shadow: 0 4px 13px rgba(37,70,180,.14) !important; backdrop-filter: blur(7px) !important;
-      opacity: .62 !important; transition: width .18s ease, transform .18s ease, opacity .18s ease, background .18s ease !important;
-    }
-    .aitran-float-ball:hover {
-      width: 34px !important; transform: none !important; opacity: .94 !important;
-      background: linear-gradient(135deg,rgba(79,70,229,.86),rgba(37,99,235,.86)) !important;
-    }
-    .aitran-float-ball[data-translated="true"] {
-      background: linear-gradient(135deg,rgba(51,65,85,.58),rgba(67,56,202,.58)) !important;
-    }
-    .aitran-float-ball[data-translated="true"]:hover {
-      background: linear-gradient(135deg,rgba(51,65,85,.88),rgba(67,56,202,.88)) !important;
-    }
     .aitran-popover {
       position: fixed !important; z-index: 2147483646 !important; width: min(350px,calc(100vw - 24px)) !important;
       max-height: min(460px,calc(100vh - 24px)) !important; overflow: auto !important; padding: 13px !important;
@@ -85,7 +68,7 @@ function eligibleHoverElement(target: EventTarget | null): HTMLElement | undefin
 export class InteractiveTranslator {
   private selectionTrigger?: HTMLButtonElement;
   private popover?: HTMLDivElement;
-  private floatBall?: HTMLButtonElement;
+  private floatingToolbar?: FloatingToolbar;
   private selectedText = '';
   private hoverTimer?: number;
   private altPressed = false;
@@ -96,7 +79,8 @@ export class InteractiveTranslator {
 
   constructor(
     private settings: Settings,
-    private readonly togglePage: () => Promise<unknown>
+    private readonly togglePage: () => Promise<unknown>,
+    private readonly summarizePage: () => Promise<unknown>
   ) {
     installInteractiveStyles();
     this.bindEvents();
@@ -106,17 +90,18 @@ export class InteractiveTranslator {
   applySettings(settings: Settings): void {
     this.settings = settings;
     if (!settings.selectionTranslation) this.removeSelectionTrigger();
-    if (!settings.floatingBall || !this.isTopFrame) this.floatBall?.remove();
-    else this.ensureFloatBall();
+    if (!settings.floatingBall || !this.isTopFrame) {
+      this.floatingToolbar?.dispose();
+      this.floatingToolbar = undefined;
+    } else {
+      this.ensureFloatBall();
+      this.floatingToolbar?.applySettings(settings);
+    }
   }
 
-  setPageTranslated(translated: boolean): void {
+  setPageTranslated(translated: boolean, translating = false): void {
     this.translatedPage = translated;
-    if (this.floatBall) {
-      this.floatBall.dataset.translated = String(translated);
-      this.floatBall.textContent = translated ? '原' : '译';
-      this.floatBall.title = translated ? '恢复原文' : '翻译当前网页';
-    }
+    this.floatingToolbar?.setPageState(translated, translating);
   }
 
   async translateInput(): Promise<{ ok: boolean; message: string }> {
@@ -234,14 +219,9 @@ export class InteractiveTranslator {
   }
 
   private ensureFloatBall(): void {
-    if (this.floatBall?.isConnected) return;
-    const button = document.createElement('button');
-    button.className = 'aitran-float-ball';
-    button.setAttribute(UI_ATTRIBUTE, 'true');
-    button.addEventListener('click', () => void this.togglePage());
-    document.documentElement.append(button);
-    this.floatBall = button;
-    this.setPageTranslated(this.translatedPage);
+    if (this.floatingToolbar) return;
+    this.floatingToolbar = new FloatingToolbar(this.settings, this.togglePage, this.summarizePage);
+    this.floatingToolbar.setPageState(this.translatedPage);
   }
 
   private async translateText(text: string, scene: 'selection' | 'hover' | 'input' = 'selection'): Promise<string> {

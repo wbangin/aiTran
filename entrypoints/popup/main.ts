@@ -10,7 +10,7 @@ const providerSelect = document.querySelector<HTMLSelectElement>('#provider')!;
 const sourceSelect = document.querySelector<HTMLSelectElement>('#source-language')!;
 const targetSelect = document.querySelector<HTMLSelectElement>('#target-language')!;
 const translateButton = document.querySelector<HTMLButtonElement>('#translate')!;
-const displayModeButton = document.querySelector<HTMLButtonElement>('#display-mode')!;
+const displayModeButton = document.querySelector<HTMLSelectElement>('#display-mode')!;
 const optionsButton = document.querySelector<HTMLButtonElement>('#options')!;
 const moreButton = document.querySelector<HTMLButtonElement>('#more')!;
 const statusElement = document.querySelector<HTMLDivElement>('#status')!;
@@ -20,6 +20,7 @@ const floatingButton = document.querySelector<HTMLButtonElement>('#floating-ball
 const inputButton = document.querySelector<HTMLButtonElement>('#input-translate')!;
 const textButton = document.querySelector<HTMLButtonElement>('#text-translate')!;
 const documentButton = document.querySelector<HTMLButtonElement>('#document-translate')!;
+const summarizeButton = document.querySelector<HTMLButtonElement>('#summarize-page')!;
 const swapLanguagesButton = document.querySelector<HTMLButtonElement>('#swap-languages')!;
 const inputShortcutElement = document.querySelector<HTMLElement>('#input-shortcut')!;
 let settings: Settings;
@@ -93,16 +94,18 @@ async function saveQuickSettings(): Promise<void> {
 
 function renderTranslateButton(status: PageStatus): void {
   const label = status.translating ? '翻译中…' : status.translated ? '显示原文' : '翻译网页';
-  const shortcut = document.createElement('kbd');
-  shortcut.id = 'page-shortcut';
-  shortcut.textContent = shortcutLabels.toggleTranslation;
-  translateButton.replaceChildren(document.createTextNode(`${label} `), shortcut);
-  translateButton.title = `网页翻译快捷键：${shortcutLabels.toggleTranslation}`;
+  translateButton.textContent = label;
+  translateButton.title = shortcutLabels.toggleTranslation === '未设置'
+    ? `${label}；可在浏览器扩展快捷键设置中分配快捷键`
+    : `${label}（${shortcutLabels.toggleTranslation}）`;
 }
 
 function renderShortcutLabels(): void {
   inputShortcutElement.textContent = shortcutLabels.translateInput;
-  inputButton.title = `输入框翻译快捷键：${shortcutLabels.translateInput}`;
+  inputShortcutElement.hidden = true;
+  inputButton.title = shortcutLabels.translateInput === '未设置'
+    ? '翻译当前输入框；可在浏览器扩展快捷键设置中分配快捷键'
+    : `输入框翻译快捷键：${shortcutLabels.translateInput}`;
   hoverButton.title = `按住 ${shortcutLabels.hoverModifier} 并悬停段落进行翻译`;
   renderTranslateButton(pageStatus);
 }
@@ -116,7 +119,7 @@ function applyPageStatus(value: unknown): void {
   if (status.error) setStatus(status.error, 'error');
   else if (status.translating) setStatus(`正在翻译 ${status.translatedBlocks}/${status.totalBlocks || '…'}`);
   else if (status.translated) setStatus(`已翻译 ${status.translatedBlocks} 个文本块`, 'success');
-  else setStatus('选择翻译服务后即可开始');
+  else setStatus('');
 }
 
 function currentProviderName(): string {
@@ -131,7 +134,8 @@ function renderFeatureStates(): void {
   selectionButton.classList.toggle('active', settings.selectionTranslation);
   selectionButton.title = `划词翻译跟随当前网页服务：${currentProviderName()}`;
   floatingButton.classList.toggle('active', settings.floatingBall);
-  displayModeButton.textContent = settings.displayMode === 'bilingual' ? '双语' : '译文';
+  displayModeButton.value = settings.displayMode;
+  for (const [button, active] of [[hoverButton, settings.hoverTranslation], [selectionButton, settings.selectionTranslation], [floatingButton, settings.floatingBall]] as const) button.setAttribute('aria-pressed', String(active));
   displayModeButton.title = settings.displayMode === 'bilingual' ? '当前：双语对照' : '当前：仅显示译文';
 }
 
@@ -152,6 +156,8 @@ async function initialize(): Promise<void> {
   shortcutLabels = await loadShortcutLabels();
   renderFeatureStates();
   renderShortcutLabels();
+  translateButton.disabled = false;
+  summarizeButton.disabled = false;
   try {
     await activeTabId();
     applyPageStatus(await requestPageStatus({ type: 'GET_ACTIVE_PAGE_STATUS' }));
@@ -168,12 +174,28 @@ translateButton.addEventListener('click', async () => {
   finally { translateButton.disabled = pageStatus.translating; }
 });
 
-displayModeButton.addEventListener('click', async () => {
-  settings = { ...settings, displayMode: settings.displayMode === 'bilingual' ? 'translation-only' : 'bilingual' };
-  await persistSettings();
+summarizeButton.addEventListener('click', async () => {
+  summarizeButton.disabled = true;
+  try {
+    await saveQuickSettings();
+    const result = await browser.runtime.sendMessage({ type: 'OPEN_ACTIVE_PAGE_SUMMARY' } satisfies RuntimeMessage) as { ok: boolean; error?: string };
+    if (!result?.ok) throw new Error(result?.error || '无法打开总结面板，请刷新当前网页后再试。');
+    window.close();
+  } catch (error) {
+    setStatus(errorMessage(error), 'error');
+  } finally {
+    summarizeButton.disabled = false;
+  }
+});
+
+displayModeButton.addEventListener('change', async () => {
+  const previous = settings.displayMode;
+  settings = { ...settings, displayMode: displayModeButton.value as Settings['displayMode'] };
+  try { await persistSettings();
   if (pageStatus.translated) {
     setStatus(settings.displayMode === 'translation-only' ? '已切换为仅显示译文' : '已切换为双语对照', 'success');
   }
+  } catch (error) { settings.displayMode = previous; renderFeatureStates(); setStatus(errorMessage(error), 'error'); }
 });
 hoverButton.addEventListener('click', () => void toggleSetting('hoverTranslation'));
 selectionButton.addEventListener('click', () => void toggleSetting('selectionTranslation'));

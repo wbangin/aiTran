@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest';
-import { collectTranslationBlocks } from '../src/core/dom';
+import { collectTranslationBlocks, isDeveloperConsolePage } from '../src/core/dom';
 
 beforeEach(() => {
   document.body.innerHTML = '';
@@ -13,6 +13,75 @@ beforeEach(() => {
 });
 
 describe('DOM block collection', () => {
+  it('targets only the Chrome publisher dashboard for application labels', () => {
+    expect(isDeveloperConsolePage('https://chrome.google.com/webstore/devconsole/publisher/settings?evr=SUCCESS')).toBe(true);
+    expect(isDeveloperConsolePage('https://chrome.google.com/webstore/detail/extension')).toBe(false);
+    expect(isDeveloperConsolePage('https://chrome.google.com.evil.test/webstore/devconsole/x/settings')).toBe(false);
+    expect(isDeveloperConsolePage('http://chrome.google.com/webstore/devconsole/x/settings')).toBe(false);
+  });
+
+  it('collects dashboard navigation, short labels and controls without including fields or decorative icons', () => {
+    document.body.innerHTML = `
+      <header class="app-header"><strong>Chrome Web Store Developer Dashboard</strong></header>
+      <nav role="navigation"><a href="/items">Items</a><a href="/settings"><span>Settings</span></a></nav>
+      <main><div class="settings-header">Trader declaration</div>
+        <p>Declare whether your publisher account is considered a trader.</p>
+        <button id="edit">Edit</button>
+        <div role="button" id="address"><span>Enter address</span></div>
+        <label><input type="radio" name="trader" />This is a non-trader account</label>
+        <span aria-hidden="true">Private icon</span>
+        <input value="secret" aria-label="Publisher email" />
+        <div contenteditable="true">Private draft</div>
+      </main>`;
+    const blocks = collectTranslationBlocks(document.body, true);
+    expect(blocks.map((block) => block.text)).toEqual([
+      'Chrome Web Store Developer Dashboard', 'Items', 'Settings', 'Trader declaration',
+      'Declare whether your publisher account is considered a trader.', 'Edit', 'Enter address',
+      'This is a non-trader account'
+    ]);
+    expect(blocks.find((block) => block.text === 'Settings')?.placement).toBe('inside');
+    expect(blocks.map((block) => block.text).join(' ')).not.toMatch(/secret|Private/);
+  });
+  it.each(['flex', 'grid'])('keeps %s workflow cards out of translation blocks', (display) => {
+    document.body.innerHTML = `<aside><ul><li id="workflow" style="display:${display}">
+      <span aria-hidden="true">Python icon</span>
+      <div><strong>Publish Python Package</strong><p>Publish a Python Package to PyPI on release.</p><span>By GitHub Actions</span></div>
+      <button>Configure</button>
+    </li></ul></aside>`;
+    const blocks = collectTranslationBlocks();
+    expect(blocks.map((block) => block.text)).toEqual([
+      'Publish Python Package', 'Publish a Python Package to PyPI on release.', 'By GitHub Actions'
+    ]);
+    expect(blocks.every((block) => block.kind === 'compact' && block.placement === 'inside')).toBe(true);
+    expect(blocks.some((block) => block.element.id === 'workflow')).toBe(false);
+  });
+
+  it('preserves short inline-wrapped titles without absorbing a neighbouring control', () => {
+    document.body.innerHTML = `<aside><div style="display:flex">
+      <div><div><strong>Django</strong></div><div>Build and Test a Django Project</div></div>
+      <a class="btn">Configure</a>
+    </div></aside>`;
+    expect(collectTranslationBlocks().map((block) => block.text)).toEqual(['Django', 'Build and Test a Django Project']);
+  });
+
+  it('keeps inline emphasis in generic text and does not re-collect translated ancestors', () => {
+    document.body.innerHTML = `<aside><div>Build and Test a <strong>Django</strong> Project</div></aside>
+      <article><li>Introduction to this item.<p data-aitran-translated="true">The nested paragraph is already translated.</p></li></article>`;
+    expect(collectTranslationBlocks().map((block) => block.text)).toEqual(['Build and Test a Django Project']);
+  });
+
+  it('does not collect semantic layout containers or overlapping ancestor blocks', () => {
+    document.body.innerHTML = `<article>
+      <h2 style="display:flex">This layout heading has no safe text wrapper</h2>
+      <ul><li>Introduction to this item.<p>The nested paragraph should only be translated once.</p></li></ul>
+      <p>Run <strong>the application</strong> to begin translating.</p>
+    </article>`;
+    expect(collectTranslationBlocks().map((block) => block.text)).toEqual([
+      'The nested paragraph should only be translated once.',
+      'Run the application to begin translating.'
+    ]);
+  });
+
   it('translates GitHub repository descriptions without translating navigation and controls', () => {
     document.body.innerHTML = `
       <header>
@@ -45,7 +114,8 @@ describe('DOM block collection', () => {
     ]);
     expect(blocks.filter((block) => block.kind === 'compact').map((block) => block.text)).toEqual([
       'Add support and sponsorship options',
-      'feat: update version to 0.0.5 in wxt.config.ts'
+      'feat: update version to 0.0.5 in wxt.config.ts',
+      'Use your locally running AI models to assist you in your web browsing.'
     ]);
   });
 
